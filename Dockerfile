@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-LABEL org.opencontainers.image.source=https://github.com/V-know/ChatGPT-Telegram-Group-Assist
+LABEL org.opencontainers.image.source=https://github.com/V-know/ChatGPT-Telegram-Group-Assistant
 
 ARG APP_HOME=/app
 WORKDIR $APP_HOME

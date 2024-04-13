@@ -1,6 +1,6 @@
 version: '3.9'  # 使用的 Docker Compose 文件版本
 services:
   bot:
-    image: ghcr.io/v-know/chatgpt-telegram-group-assist:latest
+    image: ghcr.io/v-know/chatgpt-telegram-group-assistant:latest
     volumes:
       - ./config.yaml:/app/config.yaml
