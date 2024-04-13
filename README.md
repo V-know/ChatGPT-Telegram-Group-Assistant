@@ -9,7 +9,7 @@ python main.py | tee >> debug.log
 ### Docker build & Run
 
 ```shell
-docker run --rm --name chatgpt-telegram-bot -v ./config.yaml:/app/config.yaml ghcr.io/v-know/chatgpt-telegram-group-assistant:latest
+docker run --rm --name chatgpt-telegram-group-assistant -v ./config.yaml:/app/config.yaml ghcr.io/v-know/chatgpt-telegram-group-assistant:latest
 ```
 
 ### Docker Compose
