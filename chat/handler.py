@@ -56,7 +56,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     placeholder_message = await update.message.reply_text("...")
 
-    prompt = update.message.text.replace("/ask ", "")
+    prompt = update.message.text.replace("/ask@WoLongFengChuBot ", "").replace("/ask ", "")
     # Init messages
     records = mysql.getMany(f"select * from records where user_id={user_id} and reset_at is null order by id desc",
                             context_count[level])

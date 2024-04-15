@@ -16,12 +16,14 @@ bot.
 """
 
 import logging
+import requests
 
-from telegram import ForceReply, Update
+from telegram import ForceReply, Update, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from chat.handler import answer_handler
 from config import config
+
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -48,15 +50,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text("Help!")
 
 
-async def ask(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /help is issued."""
-    print(update.message.text.split(" "))
-    await update.message.reply_text("Help!")
-
-
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text("私聊请使用：@RoboAceBot \nPlease use @RoboAceBot for Private Chat")
+    text = "私聊请使用：@RoboAceBot \nPlease use @RoboAceBot for Private Chat"
+    with open("RoboAceBot.png", "rb") as f:
+        await update.message.reply_photo(photo=f, caption=text)
 
 
 def main() -> None:
