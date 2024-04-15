@@ -12,7 +12,6 @@ from db.MySqlConn import Mysql
 from chat.templates import token_limit
 from config import (
     token,
-    reply_markup,
     CHOOSING,
     rate_limit,
     time_span,
@@ -52,7 +51,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 f"您每 {time_span} 分钟最多可向我提问 {rate_limit[level]} 个问题{emoji.emojize(':weary_face:')}\n" \
                 f"联系 @AiMessagerBot 获取更多帮助!{emoji.emojize(':check_mark_button:')}\n" \
                 f"或稍后再试！"
-        await update.message.reply_text(reply, reply_markup=reply_markup)
+        await update.message.reply_text(reply)
         return CHOOSING
 
     placeholder_message = await update.message.reply_text("...")
@@ -112,7 +111,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         mysql.end()
         if notification_channel:
             msg = f"#U{user_id}: {prompt} \n#Jarvis : {answer}"
-            await context.bot.send_message(chat_id=notification_channel, text=msg)
+            await context.bot.send_message(chat_id=notification_channel, text=msg, disable_web_page_preview=True)
             # parse_mode=parse_mode)  # reply_markup=markup)
     return CHOOSING
 
