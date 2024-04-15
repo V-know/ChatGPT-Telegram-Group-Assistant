@@ -20,11 +20,8 @@ run: $(VENV)/bin/activate
 	$(PYTHON) main.py
 
 image: $(VENV)/bin/activate
-	docker buildx build --platform linux/amd64 . -t ghcr.io/v-know/chatgpt-telegram-group-assistant:amd64-latest
-	docker push ghcr.io/v-know/chatgpt-telegram-group-assistant:latest
-
-	docker buildx build --platform linux/arm64 . -t ghcr.io/v-know/chatgpt-telegram-group-assistant:arm64-latest
-	docker push ghcr.io/v-know/chatgpt-telegram-group-assistant:arm64-latest
+	docker buildx build --platform linux/amd64 . -t ghcr.io/v-know/chatgpt-telegram-group-assistant:amd64-latest --push
+	docker buildx build --platform linux/arm64 . -t ghcr.io/v-know/chatgpt-telegram-group-assistant:arm64-latest --push
 
 # 显示帮助信息
 help:
