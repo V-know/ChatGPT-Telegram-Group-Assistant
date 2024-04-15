@@ -7,6 +7,8 @@ WORKDIR $APP_HOME
 
 ADD . $APP_HOME
 
-RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple some-package; pip install -r $APP_HOME/requirements.txt
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+    && pip install cryptography \
+    && pip install -r $APP_HOME/requirements.txt
 
 ENTRYPOINT ["python", "main.py"]
