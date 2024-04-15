@@ -51,10 +51,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    chat_id = update.effective_chat.id
     text = "私聊请使用：@RoboAceBot \nPlease use @RoboAceBot for Private Chat"
     with open("RoboAceBot.png", "rb") as f:
-        await context.bot.send_photo(chat_id=chat_id, photo=f, caption=text)
+        if update.message:
+            await update.message.reply_photo(photo=f, caption=text)
 
 
 def main() -> None:
