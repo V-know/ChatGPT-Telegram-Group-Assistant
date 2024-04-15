@@ -54,7 +54,10 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = "私聊请使用：@RoboAceBot \nPlease use @RoboAceBot for Private Chat"
     with open("RoboAceBot.png", "rb") as f:
         if update.message:
-            await update.message.reply_photo(photo=f, caption=text)
+            if update.message.chat.type == 'private':
+                await update.message.reply_photo(photo=f, caption=text)
+            else:
+                await answer_handler(update, context)
 
 
 def main() -> None:
