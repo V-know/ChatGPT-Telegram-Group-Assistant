@@ -1,5 +1,7 @@
 # ChatGPT Telegram Group Assistant
 
+Ask me anything by bot command `/ask` or just replying my message directly.
+
 ## 🚀Start
 
 ```shell
