@@ -57,21 +57,28 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     placeholder_message = await update.message.reply_text("...")
 
     prompt = update.message.text.replace("/ask@WoLongFengChuBot ", "").replace("/ask ", "")
-    # Init messages
-    records = mysql.getMany(f"select * from records where user_id={user_id} and reset_at is null order by id desc",
-                            context_count[level])
     if update.message:
         messages = []
         prompt_tokens = 0
-        if records:
-            for record in records:
-                messages.append({"role": record["role"], "content": record["content"]})
-                prompt_tokens += count_tokens(record["content"])
-            messages.reverse()
-        messages.insert(0, {"role": "system", "content": logged_in_user["system_content"]})
-        prompt_tokens += count_tokens(logged_in_user["system_content"])
-        messages.append({"role": "user", "content": prompt})
-        prompt_tokens += count_tokens(prompt)
+        if update.message.reply_to_message:
+            referred_message = update.message.reply_to_message.text
+            messages.append({"role": "system", "content": referred_message})
+            messages.append({"role": "user", "content": prompt})
+            prompt_tokens = count_tokens(referred_message)
+            prompt_tokens += count_tokens(prompt)
+        else:
+            # Init messages
+            records = mysql.getMany(f"select * from records where user_id={user_id} and reset_at is null order by id desc",
+                                    context_count[level])
+            if records:
+                for record in records:
+                    messages.append({"role": record["role"], "content": record["content"]})
+                    prompt_tokens += count_tokens(record["content"])
+                messages.reverse()
+            messages.insert(0, {"role": "system", "content": logged_in_user["system_content"]})
+            prompt_tokens += count_tokens(logged_in_user["system_content"])
+            messages.append({"role": "user", "content": prompt})
+            prompt_tokens += count_tokens(prompt)
 
         replies = ChatCompletionsAI(logged_in_user, messages)
         prev_answer = ""
