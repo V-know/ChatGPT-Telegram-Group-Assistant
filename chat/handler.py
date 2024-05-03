@@ -12,14 +12,14 @@ from db.MySqlConn import Mysql
 from chat.templates import token_limit
 from config import (
     token,
-    CHOOSING,
     rate_limit,
     time_span,
+    vip_groups,
     notification_channel,
     context_count)
 
 
-async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     user_id = user.id
@@ -38,7 +38,6 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         mysql.update("update users set nick_name=%s where user_id=%s", (nick_name, user_id))
 
     logged_in_user = mysql.getOne(f"select * from users where user_id={user_id}")
-    parse_mode = logged_in_user.get("parse_mode")
     # VIP level
     level = logged_in_user.get("level")
 
@@ -46,17 +45,22 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     chat_count = mysql.getOne(
         f"select count(*) as count from records where role='user' and created_at >=NOW() - INTERVAL {time_span} MINUTE;")
 
-    if chat_count.get("count") > rate_limit[level]:
+    # Check whether the chat is in a VIP group
+    is_from_vip_group = True if update.message.chat.type == "group" and update.message.chat.title in vip_groups \
+        else False
+
+    if chat_count.get("count") > rate_limit[level] and not is_from_vip_group:
         reply = f"请求太快了!{emoji.emojize(':rocket:')}\n" \
                 f"您每 {time_span} 分钟最多可向我提问 {rate_limit[level]} 个问题{emoji.emojize(':weary_face:')}\n" \
                 f"联系 @AiMessagerBot 获取更多帮助!{emoji.emojize(':check_mark_button:')}\n" \
                 f"或稍后再试！"
         await update.message.reply_text(reply)
-        return CHOOSING
+        return
 
     placeholder_message = await update.message.reply_text("...")
 
     prompt = update.message.text.replace("/ask@WoLongFengChuBot ", "").replace("/ask ", "")
+
     if update.message:
         messages = []
         prompt_tokens = 0
@@ -68,8 +72,9 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             prompt_tokens += count_tokens(prompt)
         else:
             # Init messages
-            records = mysql.getMany(f"select * from records where user_id={user_id} and reset_at is null order by id desc",
-                                    context_count[level])
+            records = mysql.getMany(
+                f"select * from records where user_id={user_id} and reset_at is null order by id desc",
+                context_count[level])
             if records:
                 for record in records:
                     messages.append({"role": record["role"], "content": record["content"]})
@@ -80,7 +85,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             messages.append({"role": "user", "content": prompt})
             prompt_tokens += count_tokens(prompt)
 
-        replies = ChatCompletionsAI(logged_in_user, messages)
+        replies = ChatCompletionsAI(logged_in_user, messages, is_from_vip_group)
         prev_answer = ""
         index = 0
         answer = ""
@@ -91,21 +96,21 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 continue
             prev_answer = answer
             try:
-                if status == "length":
+                if status == "length" and not is_from_vip_group:
                     answer = token_limit[user_checkin["lang"]].safe_substitute(answer=answer, max_token=token[level])
                 elif status == "content_filter":
                     answer = f"{answer}\n\nAs an AI assistant, please ask me appropriate questions!！\nPlease contact @AiMessagerBot for more help!" \
                              f"{emoji.emojize(':check_mark_button:')}"
                 await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id,
                                                     message_id=placeholder_message.message_id,
-                                                    parse_mode=parse_mode, disable_web_page_preview=True)
+                                                    parse_mode="Markdown", disable_web_page_preview=True)
             except BadRequest as e:
                 if str(e).startswith("Message is not modified"):
                     continue
                 else:
                     await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id,
                                                         message_id=placeholder_message.message_id)
-            await asyncio.sleep(0.01)  # wait a bit to avoid flooding
+            await asyncio.sleep(0.05)  # wait a bit to avoid flooding
 
         date_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         sql = "insert into records (user_id, role, content, created_at, tokens) " \
@@ -120,7 +125,6 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             msg = f"#U{user_id}: {prompt} \n#Jarvis : {answer}"
             await context.bot.send_message(chat_id=notification_channel, text=msg, disable_web_page_preview=True)
             # parse_mode=parse_mode)  # reply_markup=markup)
-    return CHOOSING
 
 
 def count_tokens(text):
