@@ -2,6 +2,15 @@
 
 Ask me anything by bot command `/ask` or just replying my message directly.
 
+## ⚙️Preparation
+
+Prepare the configuration file `config.yaml`:
+
+[All the required configurations are in config.yaml, please refer to config.yaml.example for file format and content.](https://github.com/V-know/ChatGPT-Telegram-Bot/blob/main/README.md#add-configuration)
+```shell
+cp config.yaml.example config.yaml
+```
+
 ## 🚀Start
 
 ```shell
