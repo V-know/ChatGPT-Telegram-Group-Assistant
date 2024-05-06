@@ -29,7 +29,8 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_checkin = mysql.getOne(f"select * from users where user_id={user_id}")
     if not user_checkin:
         date_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        sql = "insert into users (user_id, name, nick_name, level, system_content, created_at) values (%s, %s, %s, %s, %s, %s)"
+        sql = ("insert into users (user_id, name, nick_name, level, system_content, created_at) "
+               "values (%s, %s, %s, %s, %s, %s)")
         value = [user_id, user.username, nick_name, 0, "You are an AI assistant that helps people find information.",
                  date_time]
         mysql.insertOne(sql, value)
@@ -46,8 +47,8 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"select count(*) as count from records where role='user' and created_at >=NOW() - INTERVAL {time_span} MINUTE;")
 
     # Check whether the chat is in a VIP group
-    is_from_vip_group = True if update.message.chat.type == "group" and update.message.chat.title in vip_groups \
-        else False
+    is_from_vip_group = True if (update.message.chat.type != "private" and update.message.chat.username.lower() in
+                                 vip_groups) else False
 
     if chat_count.get("count") > rate_limit[level] and not is_from_vip_group:
         reply = f"请求太快了!{emoji.emojize(':rocket:')}\n" \

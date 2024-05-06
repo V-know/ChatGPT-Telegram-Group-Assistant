@@ -22,4 +22,4 @@ token = config["MAX_TOKEN"]
 context_count = config["CONTEXT_COUNT"]
 rate_limit = config["RATE_LIMIT"]
 notification_channel = config.get("NOTIFICATION_CHANNEL")
-vip_groups = config.get("VIP_GROUPS")
+vip_groups = [username.lower() for username in config.get("VIP_GROUPS")]

@@ -30,9 +30,9 @@ MAX_TOKEN:
   2: 1024
 
 VIP_GROUPS:
-  - "group1"
-  - "vip group 2"
-  - "Kubernetes CN"
+  - group1     # https://t.me/group1
+  - vip_group_2
+  - Kubernetes_CN # https://t.me/Kubernetes_CN
 
 TIME_SPAN: 3 #Minutes
 DEVELOPER_CHAT_ID: 467300857
