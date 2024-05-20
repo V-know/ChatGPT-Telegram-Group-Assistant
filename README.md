@@ -2,6 +2,10 @@
 
 Ask me anything by bot command `/ask` or just replying my message directly.
 
+## 🤖Quick Experience
+
+Telegram Bot: [卧龙凤雏](https://t.me/WoLongFengChuBot)
+
 ## ⚙️Preparation
 
 Prepare the configuration file `config.yaml`:
