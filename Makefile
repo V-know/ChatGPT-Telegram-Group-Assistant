@@ -22,6 +22,9 @@ run: $(VENV)/bin/activate
 image: $(VENV)/bin/activate
 	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/v-know/chatgpt-telegram-group-assistant:latest --push .
 
+preflight: $(VENV)/bin/activate
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/v-know/chatgpt-telegram-group-assistant:preflight --push .
+
 # 显示帮助信息
 help:
 	@echo "Available targets:"

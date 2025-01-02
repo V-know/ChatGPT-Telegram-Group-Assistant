@@ -24,6 +24,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = user.id
     nick_name = user.full_name
+    group_name = update.message.chat.username.lower()
     mysql = Mysql()
 
     user_checkin = mysql.getOne(f"select * from users where user_id={user_id}")
@@ -40,23 +41,23 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     logged_in_user = mysql.getOne(f"select * from users where user_id={user_id}")
     # VIP level
-    level = logged_in_user.get("level")
+    # level = logged_in_user.get("level")
 
     # Rate limit controller
     chat_count = mysql.getOne(
         f"select count(*) as count from records where role='user' and created_at >=NOW() - INTERVAL {time_span} MINUTE;")
 
     # Check whether the chat is in a VIP group
-    is_from_vip_group = True if (update.message.chat.type != "private" and update.message.chat.username.lower() in
-                                 vip_groups) else False
+    is_from_vip_group = True if (update.message.chat.type != "private" and group_name in vip_groups) else False
 
-    if chat_count.get("count") > rate_limit[level] and not is_from_vip_group:
-        reply = f"请求太快了!{emoji.emojize(':rocket:')}\n" \
-                f"您每 {time_span} 分钟最多可向我提问 {rate_limit[level]} 个问题{emoji.emojize(':weary_face:')}\n" \
-                f"联系 @AiMessagerBot 获取更多帮助!{emoji.emojize(':check_mark_button:')}\n" \
-                f"或稍后再试！"
-        await update.message.reply_text(reply)
-        return
+    if not is_from_vip_group:
+        if chat_count.get("count") > rate_limit:
+            reply = f"请求太快了!{emoji.emojize(':rocket:')}\n" \
+                    f"非注册群组中的用户，您每 {time_span} 分钟最多可向我提问 {rate_limit} 个问题{emoji.emojize(':weary_face:')}\n" \
+                    f"联系 @AiMessagerBot 获取更多额度{emoji.emojize(':check_mark_button:')}\n" \
+                    f"或稍后再试！"
+            await update.message.reply_text(reply)
+            return
 
     placeholder_message = await update.message.reply_text("...")
 
@@ -75,7 +76,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Init messages
             records = mysql.getMany(
                 f"select * from records where user_id={user_id} and reset_at is null order by id desc",
-                context_count[level])
+                context_count)
             if records:
                 for record in records:
                     messages.append({"role": record["role"], "content": record["content"]})
@@ -98,7 +99,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             prev_answer = answer
             try:
                 if status == "length" and not is_from_vip_group:
-                    answer = token_limit[user_checkin["lang"]].safe_substitute(answer=answer, max_token=token[level])
+                    answer = token_limit[user_checkin["lang"]].safe_substitute(answer=answer, max_token=token)
                 elif status == "content_filter":
                     answer = f"{answer}\n\nAs an AI assistant, please ask me appropriate questions!！\nPlease contact @AiMessagerBot for more help!" \
                              f"{emoji.emojize(':check_mark_button:')}"
@@ -123,7 +124,7 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mysql.insertOne(sql, value)
         mysql.end()
         if notification_channel:
-            msg = f"#U{user_id}: {prompt} \n#Jarvis : {answer}"
+            msg = f"#U{user_id} {nick_name} from #{group_name}: {prompt} \n#Jarvis : {answer}"
             await context.bot.send_message(chat_id=notification_channel, text=msg, disable_web_page_preview=True)
             # parse_mode=parse_mode)  # reply_markup=markup)
 

@@ -15,7 +15,7 @@ OPENAI_CHAT_COMPLETION_OPTIONS = {
 
 
 async def ChatCompletionsAI(logged_in_user, messages, is_from_vip_group) -> (str, str):
-    level = logged_in_user.get("level")
+    # level = logged_in_user.get("level")
 
     # Setup AI
     openai.api_key = config["AI"]["TOKEN"]
@@ -30,7 +30,7 @@ async def ChatCompletionsAI(logged_in_user, messages, is_from_vip_group) -> (str
 
     response = await openai.ChatCompletion.acreate(
         messages=messages,
-        max_tokens=token[level] if not is_from_vip_group else 3600,
+        max_tokens=token if not is_from_vip_group else 3600,
         **OPENAI_CHAT_COMPLETION_OPTIONS)
 
     answer = ""
