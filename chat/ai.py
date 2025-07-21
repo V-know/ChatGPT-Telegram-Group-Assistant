@@ -1,40 +1,30 @@
 from config import token
-import openai
 from db.MySqlConn import config
+from ai.openai import OpenAIClient
+from ai.azure import AzureAIClient
+from ai import OPENAI_CHAT_COMPLETION_OPTIONS
 
-OPENAI_CHAT_COMPLETION_OPTIONS = {
-    "temperature": 0.7,
-    "top_p": 1,
-    "frequency_penalty": 0,
-    "presence_penalty": 0,
-    "stream": True,
-    "stop": None,
-    "model": "gpt-3.5-turbo" if config["AI"]["TYPE"] != "azure" else None,
-    "engine": None if config["AI"]["TYPE"] != "azure" else config["AI"]["ENGINE"]
-}
+
+def init_client():
+    if config["AI"]["TYPE"] == "azure":
+        client = AzureAIClient()
+    else:
+        client = OpenAIClient()
+    return client
 
 
 async def ChatCompletionsAI(logged_in_user, messages, is_from_vip_group) -> (str, str):
-    # level = logged_in_user.get("level")
+    level = logged_in_user.get("level")
 
-    # Setup AI
-    openai.api_key = config["AI"]["TOKEN"]
-
-    if config["AI"]["TYPE"] == "azure":
-        openai.api_type = config["AI"]["TYPE"]
-        openai.api_base = config["AI"]["BASE"]
-        openai.api_version = config["AI"]["VERSION"]
-    else:
-        OPENAI_CHAT_COMPLETION_OPTIONS["model"] = config["AI"]["MODEL"]
-        openai.api_base = config["AI"]["BASE"]
-
-    response = await openai.ChatCompletion.acreate(
-        messages=messages,
-        max_tokens=token if not is_from_vip_group else 3600,
-        **OPENAI_CHAT_COMPLETION_OPTIONS)
-
+    ai = init_client()
     answer = ""
-    async for r in response:
-        delta = r.choices[0].delta
-        answer += delta["content"] if delta.get("content") else ""
-        yield answer, r.choices[0]["finish_reason"]
+    with ai.client.chat.completions.with_streaming_response.create(
+            messages=messages,
+            max_tokens=token if not is_from_vip_group else 3600,
+            **OPENAI_CHAT_COMPLETION_OPTIONS) as response:
+        for r in response.parse():
+            if r.choices:
+                delta = r.choices[0].delta
+                if delta.content:
+                    answer += delta.content
+                yield answer, r.choices[0].finish_reason
