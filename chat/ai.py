@@ -20,7 +20,7 @@ async def ChatCompletionsAI(logged_in_user, messages, is_from_vip_group) -> (str
     answer = ""
     with ai.client.chat.completions.with_streaming_response.create(
             messages=messages,
-            max_tokens=token if not is_from_vip_group else 3600,
+            max_tokens=token if is_from_vip_group else 512,
             **OPENAI_CHAT_COMPLETION_OPTIONS) as response:
         for r in response.parse():
             if r.choices:
