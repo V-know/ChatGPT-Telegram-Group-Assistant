@@ -59,9 +59,20 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(reply)
             return
 
-    placeholder_message = await update.message.reply_text("...")
-
+    # Strip the /ask command prefix to extract the actual question
     prompt = update.message.text.replace("/ask@WoLongFengChuBot ", "").replace("/ask ", "")
+    # Handle empty prompt (e.g. user sent "/ask" or "/ask@WoLongFengChuBot" with no question)
+    prompt = prompt.strip()
+    if not prompt or prompt in ("/ask", "/ask@WoLongFengChuBot"):
+        usage_hint = (
+            "请在 /ask 后面输入您的问题，例如：\n"
+            "• /ask 今天天气怎么样？\n"
+            "• /ask@WoLongFengChuBot 帮我翻译一段话"
+        )
+        await update.message.reply_text(usage_hint)
+        return
+
+    placeholder_message = await update.message.reply_text("...")
 
     if update.message:
         messages = []
