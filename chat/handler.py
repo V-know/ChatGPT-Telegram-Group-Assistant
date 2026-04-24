@@ -59,30 +59,45 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(reply)
             return
 
-    # Strip the /ask command prefix to extract the actual question
-    prompt = update.message.text.replace("/ask@WoLongFengChuBot ", "").replace("/ask ", "")
-    # Handle empty prompt (e.g. user sent "/ask" or "/ask@WoLongFengChuBot" with no question)
-    prompt = prompt.strip()
-    if not prompt or prompt in ("/ask", "/ask@WoLongFengChuBot"):
-        usage_hint = (
-            "请在 /ask 后面输入您的问题，例如：\n"
-            "• /ask 今天天气怎么样？\n"
-            "• /ask@WoLongFengChuBot 帮我翻译一段话"
-        )
-        await update.message.reply_text(usage_hint)
-        return
+    # Strip the /ask command prefix (with optional @botname) to extract the actual question
+    prompt = re.sub(r'^/ask(@\w+)?\s*', '', update.message.text).strip()
+
+    has_reply_text = bool(
+        update.message.reply_to_message and update.message.reply_to_message.text
+    )
+
+    # Handle empty prompt
+    if not prompt:
+        if has_reply_text:
+            # Use the quoted message as the prompt directly
+            prompt = update.message.reply_to_message.text.strip()
+        else:
+            usage_hint = (
+                "请在 /ask 后面输入您的问题，例如：\n"
+                "• /ask 今天天气怎么样？\n"
+                "• 回复某条消息并发送 /ask 让我分析引用的内容\n"
+                "• 回复某条消息并发送 /ask 你的追加问题"
+            )
+            await update.message.reply_text(usage_hint)
+            return
 
     placeholder_message = await update.message.reply_text("...")
 
     if update.message:
         messages = []
         prompt_tokens = 0
-        if update.message.reply_to_message:
+        if has_reply_text:
             referred_message = update.message.reply_to_message.text
-            messages.append({"role": "system", "content": referred_message})
-            messages.append({"role": "user", "content": prompt})
-            prompt_tokens = count_tokens(referred_message)
-            prompt_tokens += count_tokens(prompt)
+            # If user also added extra text after /ask, combine both into one prompt
+            original_extra = re.sub(r'^/ask(@\w+)?\s*', '', update.message.text).strip()
+            if original_extra:
+                combined_prompt = f"参考以下内容：\n{referred_message}\n\n{original_extra}"
+            else:
+                combined_prompt = referred_message
+            messages.append({"role": "system", "content": logged_in_user["system_content"]})
+            messages.append({"role": "user", "content": combined_prompt})
+            prompt = combined_prompt
+            prompt_tokens = count_tokens(combined_prompt)
         else:
             # Init messages
             records = mysql.getMany(
